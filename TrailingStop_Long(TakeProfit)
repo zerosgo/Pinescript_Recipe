@@ -1,0 +1,40 @@
+//@version=5
+strategy("[레시피] 익절형 트레일링스탑 - 롱", overlay=true)
+
+// 여기는 자유롭게
+rsi = ta.rsi(close, 14)
+
+
+
+//////////////////// 수정할 부분 //////////////////////////
+is_long = rsi < 30
+long_trail_percent = input.float(2.0, "롱 트레일%")/100.0
+long_profit_percent = input.float(2.0, "롱 익절%")/100.0
+//////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////
+float long_trail_price = na
+float long_stop_price = na
+float long_profit_price = na
+
+
+if is_long 
+    strategy.entry("롱", strategy.long)
+
+if strategy.position_size > 0
+    stop_value = close * (1-nz(long_trail_percent))
+    long_trail_price := math.max(stop_value, nz(long_trail_price[1])) 
+
+
+if strategy.position_size == 0 and is_long
+    long_stop_price := close * (1 - long_trail_percent)
+    long_profit_price := close * (1 + long_profit_percent)
+    long_trail_price := long_stop_price
+else if strategy.position_size > 0  
+    long_stop_price := long_trail_price
+    long_profit_price := strategy.opentrades.entry_price(strategy.opentrades-1) * (1 + long_profit_percent)
+
+strategy.exit("롱-스탑", "롱", stop = long_stop_price, limit = long_profit_price, comment_loss = "롱-스탑", comment_profit = "익절")
+is_entry = ta.change(strategy.opentrades) > 0 
+plot(strategy.position_size > 0 ? is_entry ? long_stop_price[1] : long_stop_price : na, style = plot.style_linebr, color = color.red) 
