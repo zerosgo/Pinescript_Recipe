@@ -1,0 +1,15 @@
+// 가장 최근에 진입한 거래의 진입가
+strategy.opentrades.entry_price(strategy.opentrades-1)
+// 가장 최근에 진입한 거래의 수량 
+strategy.opentrades.size(strategy.opentrades-1) 
+// 가장 최근에 진입한 거래의 수익
+strategy.opentrades.profit(strategy.opentrades-1)
+
+// 가장 최근에 종료한 거래의 진입가
+strategy.closedtrades.entry_price(strategy.closedtrades-1)
+// 가장 최근에 종료한 거래의 종료가
+strategy.closedtrades.exit_price(strategy.closedtrades-1)
+// 가장 최근에 종료한 거래의 수량
+strategy.closedtrades.size(strategy.closedtrades-1)
+// 가장 최근에 종료한 거래의 수익
+strategy.closedtrades.profit(strategy.closedtrades-1)
