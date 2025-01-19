@@ -1,0 +1,31 @@
+//@version=5
+strategy("[레시피] 기본 트레일링스탑 - 숏", overlay=true)
+
+// 여기는 자유롭게
+rsi = ta.rsi(close, 14)
+
+//////////////////// 수정할 부분 //////////////////////////
+is_short = rsi > 70
+short_trail_percent = input.float(2.0, "숏 트레일%")/100.0
+//////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////
+float short_trail_price = na
+float short_stop_price = na
+
+if is_short 
+    strategy.entry("숏", strategy.short)
+
+if strategy.position_size < 0
+    stop_value = close * (1+nz(short_trail_percent))
+    short_trail_price := math.min(stop_value, na(short_trail_price[1]) ? 99999.0 : short_trail_price[1]) 
+
+if strategy.position_size == 0 and is_short
+    short_stop_price := close * (1+short_trail_percent)
+    short_trail_price := short_stop_price
+else if strategy.position_size < 0  
+    short_stop_price := short_trail_price
+
+strategy.exit("숏-스탑", "숏", stop = short_stop_price)
+is_entry = ta.change(strategy.opentrades) > 0 
+plot(strategy.position_size < 0 ? is_entry ? short_stop_price[1] : short_stop_price : na, style = plot.style_linebr, color = color.red) 
