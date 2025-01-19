@@ -1,0 +1,23 @@
+//@version=5
+strategy("분할 진입 후 평단가 n% 종료", overlay=true, initial_capital = 10000, default_qty_type = strategy.percent_of_equity,default_qty_value = 100)
+
+
+// 분할 및 익절% 설정
+max_entry = input.int(10, "최대 진입횟수") // 최대 10분할 진입
+profit_percent = input.float(5, "익절%")  // 평단가 대비 5% 익절
+
+///// 여기는 각자의 진입 조건
+rsi = ta.rsi(close, 14)
+is_crossover = ta.crossover(rsi, 30)
+is_long = is_crossover
+/////
+
+// 설명
+// strategy.opentrades : 진입한 포지션의 개수를 알려줍니다.
+// max_entry까지는 is_long을 만족하면 진입
+// strategy.order() : strategy.entry()와 99% 똑같습니다. 다른 1%는 pyramiding 제한 없이 무한 진입 가능
+// strategy.default_entry_qty(close) : 진입할 가격(종가close)로 계산한 진입 수량을 자동 계산해줌
+if is_long and strategy.opentrades < max_entry
+    strategy.order("롱", strategy.long, qty = strategy.default_entry_qty(close)/max_entry)
+
+strategy.exit("종료", limit = strategy.position_avg_price*(1+profit_percent*0.01))
