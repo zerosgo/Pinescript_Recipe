@@ -1,0 +1,20 @@
+//@version=5
+strategy("내 전략", overlay=true)
+/////// 최근 종료부터 5개봉이 지나야 진입 가능한 스크립트
+
+// 가장 최근 종료한 bar의 index
+recent_exit_bar_index = strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1)
+
+// 가장 최근 종료한 bar부터 얼마만큼 지났는지
+distance = bar_index - recent_exit_bar_index
+
+// distance가 5보다 큰지 체크
+is_over5 = distance > 5
+
+// 전략
+rsi = ta.rsi(close, 14)
+if rsi < 30 and (is_over5 or strategy.closedtrades == 0) // rsi가 30보다 작은 것 뿐만 아니라 최근 종료부터 5개봉이 지나야 진입 가능
+    strategy.entry("롱", strategy.long)
+
+if close > open
+    strategy.close("롱")  
