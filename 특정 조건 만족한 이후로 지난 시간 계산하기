@@ -1,0 +1,15 @@
+secondsSince(series bool cond, series bool resetCond = barstate.isnew) =>
+    varip int timeBegin = na
+    varip bool lastCond = false
+    if resetCond
+        timeBegin := cond ? timenow : na
+    else if cond
+        if not lastCond
+            timeBegin := timenow
+    else
+        timeBegin := na
+    lastCond := cond
+    int result = (timenow - timeBegin) / 1000
+
+
+secondsSince(조건) // 조건 만족한 이후로 지난 시간(초)가 반환됩니다
