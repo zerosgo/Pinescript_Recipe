@@ -1,0 +1,23 @@
+//@version=5
+strategy("진입한 봉의 고가 저가 시가 구하기", overlay=true)
+
+///////////////// 아래 코드 부분을 추가하세요 /////////////////////////////
+is_entry = ta.change(strategy.opentrades) > 0 // 진입했는지 확인(추가 진입도 해당)
+entry_bar_high = ta.valuewhen(is_entry, high, 0)
+entry_bar_low = ta.valuewhen(is_entry, low, 0)
+entry_bar_open = ta.valuewhen(is_entry, open, 0)
+
+plot(entry_bar_high, title="진입한 봉의 고가", color = color.yellow)
+plot(entry_bar_low, title="진입한 봉의 저가", color = color.yellow)
+plot(entry_bar_open, title="진입한 봉의 시가", color = color.yellow)
+///////////////// 위 코드 부분을 추가하세요 /////////////////////////////
+
+
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_long_close = rsi > 70
+
+if is_long
+    strategy.entry("롱", strategy.long)
+if is_long_close
+    strategy.close("롱")
