@@ -1,0 +1,89 @@
+■ 점진적 3분할 진입(금액) : 30달러, 60달러, 90달러 진입
+//@version=5
+strategy("전략의 모든 것",
+ overlay = false,
+ pyramiding = 3)
+
+// 진입|종료 조건
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_close = rsi > 70
+equity = strategy.equity
+
+entry_qty = (strategy.opentrades + 1) * (30/ close)
+// 진입 함수
+if is_long
+    strategy.entry("롱", strategy.long, qty = entry_qty)
+// 종료 함수
+if is_close
+    strategy.close("롱")
+
+plot(rsi, color = color.white)
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+■ 점진적 3분할 진입(수량) : 1개,  2개, 3개 진입
+//@version=5
+strategy("점진적 분할 진입", overlay=true, pyramiding = 3)
+
+// 진입|종료 조건
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_close = rsi > 70
+
+entry_qty = strategy.opentrades + 1
+// 진입 함수
+if is_long
+    strategy.entry("롱", strategy.long, qty = entry_qty)
+// 종료 함수
+if is_close
+    strategy.close("롱")
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+■ 점진적 3분할 진입(수량) : 3개,  2개, 1개 진입
+//@version=5
+strategy("점진적 분할 진입", overlay=true, pyramiding = 3)
+
+// 진입|종료 조건
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_close = rsi > 70
+
+entry_qty = 3 - strategy.opentrades
+// 진입 함수
+if is_long
+    strategy.entry("롱", strategy.long, qty = entry_qty)
+// 종료 함수
+if is_close
+    strategy.close("롱")
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+■ 점진적 3분할 진입(자본금) 
+ 
+■ 1000달러를 3분할로 진입
+//@version=5
+strategy("전략의 모든 것",
+ overlay = false,
+ pyramiding = 3,
+ default_qty_type = strategy.percent_of_equity,
+ default_qty_value = 33,
+ initial_capital = 1000)
+
+
+// 진입|종료 조건
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_close = rsi > 70
+equity = strategy.equity
+// 1/6, 2/6, 3/6 (6)
+entry_qty = ((strategy.opentrades + 1) / 6) * (equity / close)
+// 진입 함수
+if is_long
+    strategy.entry("롱", strategy.long, qty = entry_qty)
+// 종료 함수
+if is_close
+    strategy.close("롱")
+
+plot(rsi, color = color.white)
