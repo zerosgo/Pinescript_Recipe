@@ -1,0 +1,173 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+//indicator("역대 최고가/최저가", overlay=true)
+strategy("역대 최고가/최저가", overlay=true)
+highest = ta.max(high)                  // high(고가)의 최대값
+lowest = ta.min(low)                    // low(저가)의 최소값
+plot(highest, color = color.green)    // highest를 초록색 선으로 그리기
+plot(lowest, color = color.red)       // lowest를 빨간색 선으로 그리기
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+indicator("텔레그램 메세지 보내기", overlay = true)
+import dokang/PineHelper/4 as PH
+alert(PH.telegram_message("chat_id 넣기", "보낼 메세지 넣기"))
+
+//@version=5
+indicator("디스코드 메세지 보내기", overlay = true)
+import dokang/PineHelper/4 as PH
+alert(PH.discord_message("봇 이름 넣기", "보낼 메세지 넣기"))
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+indicator("Table script", overlay=true)
+var table myTable = table.new(position.top_right, 3, 2, border_width = 3)
+
+rsi = ta.rsi(close,14)
+roc = ta.roc(close, 1)
+
+if barstate.islast
+    table.cell(myTable, column=0, row=0, text="종가\n"  + str.tostring(close), width=6, bgcolor=color.green, text_color = color.white)
+    table.cell(myTable, column=1, row=0, text="rsi\n"  +str.tostring(rsi, '#.#'), width=6, bgcolor=color.red, text_color = color.white)
+    table.cell(myTable, column=2, row=0, text="roc\n"  +str.tostring(roc, '#.##') + '%', width=6, bgcolor=color.purple, text_color = color.white)
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("수익에 따른 수량조절", default_qty_value = 0.5, overlay = true)
+// 처음에는 qty = 1
+
+// netprofit가 양수이면(수익이면) qty = 2    , 수량 2개로 늘리기
+// netprofit가 음수이면(손실이면) qty = 0.5  , 수량 0.5개로 줄이기
+entry_qty = 1.0
+if strategy.netprofit > 0
+    entry_qty := 2.0
+else if strategy.netprofit < 0
+    entry_qty := 0.5
+
+strategy.entry("Long", strategy.long, qty = entry_qty)
+strategy.close("Long", qty_percent = 50)
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("백테스팅 기간 제한하기", overlay = true)
+
+start_time = input.time(timestamp("2000-01-01"), confirm = true)
+end_time = input.time(timestamp("2030-01-01"), confirm = true)
+
+is_backtesting = time >= start_time and time <= end_time
+
+bgcolor(is_backtesting ? color.rgb(120, 123, 134, 89) : na)
+
+rsi = ta.rsi(close, 14)
+if is_backtesting
+    if rsi < 30
+        strategy.entry("롱", strategy.long)
+    if rsi > 70
+        strategy.close("롱")
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("ta.valuewhen()", overlay = true)
+// 조건을 만족한 그 당시의 데이터를 가져오는 Function
+// RSI가 30을 아래로 돌파한 그 당시의 저가를 가져오고 싶엉
+rsi = ta.rsi(close, 14)
+under30 = ta.crossunder(rsi, 30)
+under30_low = ta.valuewhen(under30, low, 0)
+plot(under30_low, color = color.red, linewidth = 2)
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("ta.valuewhen()", overlay = true)
+// 조건을 만족한 그 당시의 데이터를 가져오는 Function
+// 200이동평균선을 위로 돌파한 당시의 20 이동평균을 가져오고 싶어!
+ma200 = ta.sma(close, 200)
+ma20 = ta.sma(close, 20)
+over200 = ta.crossover(close, ma200)
+nice_ma20 = ta.valuewhen(over200, ma20, 0)
+plot(nice_ma20, color = color.yellow, linewidth = 2)
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("ta.valuewhen()", overlay = true)
+// 조건을 만족한 그 당시의 데이터를 가져오는 Function
+// 진입(매수)한 당시의 저가를 가져오고 싶어
+
+entry_low = ta.valuewhen(ta.change(strategy.opentrades) > 0, low, 0)
+plot(entry_low, color = color.yellow, linewidth = 2)
+
+// 전략
+rsi = ta.rsi(close, 14)
+is_long = ta.crossunder(rsi, 30)
+is_close = ta.crossover(rsi, 70)
+
+if is_long
+    strategy.entry("롱", strategy.long)
+if is_close
+    strategy.close("롱")
+
+real_qty() =>
+    precision = 0.001
+    decimal = math.abs(math.round(math.log10(precision)))
+    factor = math.pow(10, decimal)
+    int(strategy.equity/close * factor) / factor
+
+strategy.entry("진입", strategy.long, qty = real_qty())
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("점진적 분할 진입", overlay=true, pyramiding = 3)
+
+// 진입|종료 조건
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_close = rsi > 70
+
+entry_qty = strategy.opentrades + 1
+// 진입 함수
+if is_long
+    strategy.entry("롱", strategy.long, qty = entry_qty)
+// 종료 함수
+if is_close
+    strategy.close("롱")
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("점진적 분할 진입", overlay=true, pyramiding = 3)
+
+// 진입|종료 조건
+rsi = ta.rsi(close, 14)
+is_long = rsi < 30
+is_close = rsi > 70
+
+entry_qty = 3 - strategy.opentrades
+// 진입 함수
+if is_long
+    strategy.entry("롱", strategy.long, qty = entry_qty)
+// 종료 함수
+if is_close
+    strategy.close("롱")
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// security 기능을 이용하면 "1D" 1일봉의 20일 ema를 얻을 수 있습니다
+day_ema20 = request.security(syminfo.tickerid, "1D", ta.ema(close, 20))
+// 역시 security  기능을 이용하면 "1D" 1일봉의 20일간 전고점을 얻을 수 있습니다.
+day_highest = request.security(syminfo.tickerid, "1D", ta.highest(high[1], 20))
+// "60"은 1시간 봉, "240"은 4시간 봉의 데이터를 가져올 수 있습니다.
+ema20_4h = request.security(syminfo.tickerid, "240", ta.ema(close, 20))
+request.security("AAPL", "1D", close) // 애플 일봉 종가 가져오기
+request.security("BINANCE:BTCUSDT", "1D", close) // 바이낸스 비트코인 일봉 종가 가져오기
+request.security("BINANCE:BTCUSDT", timeframe.period, close) // 현재 타임프레임과 같은 바이낸스의 BTCUSDT 종가 가져오기
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//@version=5
+strategy("내 전략")
+
+f_rsi() =>
+    rsi = request.security(syminfo.tickerid,"1D", ta.rsi(close, 14))
+    [rsi, rsi[1]]
+
+[rsi, rsi1] = request.security(syminfo.tickerid,"1D", f_rsi())
+
+plot(rsi, color = color.green) // 1일봉의 오늘날짜 rsi값
+plot(rsi1, color = color.white) // 1일봉의 어제날짜 rsi값
+
