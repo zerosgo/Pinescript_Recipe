@@ -1,0 +1,93 @@
+//@version=5
+//@strategy_alert_message {{strategy.order.alert_message}}
+import dokang/POA/6 as POA
+password = "dokang"
+strategy("헷지 전략", overlay=false, initial_capital = 10000, default_qty_type = strategy.cash, default_qty_value = 120, format=format.percent, process_orders_on_close=true)
+
+// hedge_on, off 함수
+hedge_on(string password, string base=na, string exchange = "BINANCE", string quote="USDT.P", float amount=na, int leverage = 1) =>
+    string str_base = na(base) ? syminfo.basecurrency : base
+    string str_amount = na(amount) ? "{{strategy.order.contracts}}" : str.tostring(amount)
+    
+    json =  '{'
+             + str.format(
+             ' 
+                 "password":"{0}",
+                 "exchange":"{1}",
+                 "base":"{2}",
+                 "quote": "{3}",
+                 "amount":"{4}",
+                 "leverage": "{5}",
+                 "hedge":"{6}"
+             ', password, exchange, str_base, quote, str_amount, leverage, "ON") 
+             +'}'
+    json
+
+hedge_off(string password, string base=na, string exchange = "BINANCE", string quote="USDT.P") =>
+    string str_base = na(base) ? syminfo.basecurrency : base
+    json =  '{'
+             + str.format(
+             ' 
+                 "password":"{0}",
+                 "exchange":"{1}",
+                 "base":"{2}",
+                 "quote": "{3}",
+                 "hedge":"{4}"
+             ', password, exchange, str_base, quote, "OFF") 
+             +'}'
+    json
+
+in_trade(int start_time, int end_time, float min=na, float max=na) =>    
+    allowedToTrade = (time>=start_time) and (time<=end_time)
+    if barstate.islastconfirmedhistory
+        var myLine = line(na)
+        line.delete(myLine)
+        if na(min) or na(max)
+            myLine := line.new(start_time, close, start_time, close*1.01, xloc=xloc.bar_time, color = color.rgb(255, 153, 0, 50), width = 3, extend = extend.both, style = line.style_dashed)
+        else
+            myLine := line.new(start_time, min, start_time, max, xloc=xloc.bar_time, color = color.rgb(255, 153, 0, 50), width = 3, extend = extend.both, style = line.style_dashed)
+    allowedToTrade
+
+
+// binance 가격 정보
+binance = close 
+usdkrw = request.security("FX_IDC:USDKRW", timeframe.period, close) // 환율
+binance_krw = binance*usdkrw // 바이낸스 가격 원화 환산
+
+// 업비트 가격 정보
+upbit = request.security("UPBIT:"+syminfo.basecurrency+"KRW", timeframe.period, close)
+
+// 김프
+kimp = (upbit/binance_krw - 1)*100                                                     
+kimp_ma = ta.wma(kimp, 20)
+
+// 매매 기간 설정
+start_time = input.time(timestamp("2023-03-17T18:13:00+09:00"), title="자동매매 시작")
+end_time = input.time(timestamp("2040-01-01T00:00:00+09:00"), title="자동매매 종료")
+in_trade = in_trade(start_time, end_time, min=1, max=3)
+
+// 전략
+if in_trade    
+    if kimp_ma < 0  // kimp의 20 이동평균이 0보다 작으면 헷지 진입 
+        strategy.entry("헷지", strategy.long, alert_message = hedge_on(password))
+    if kimp_ma > 3  // kimp의 20 이동평균이 3보다 크면 헷지 종료 (3% 차익)
+        strategy.close("헷지", alert_message= hedge_off(password))
+
+
+// Drawing
+plot(kimp, color = color.red)
+plot(kimp_ma, color = color.yellow)
+
+var kimp_table = table.new(position.top_right, 10, 10, color.purple)
+if barstate.islastconfirmedhistory
+    table.cell(kimp_table, 0, 0, "김프:", text_color = color.white)
+    table.cell(kimp_table, 1, 0, str.tostring(kimp, format.percent), text_color = color.white)
+    table.cell(kimp_table, 0, 1, "업비트:", text_color = color.white)
+    table.cell(kimp_table, 1, 1, str.tostring(upbit, "#.#"), text_color = color.white)
+    table.cell(kimp_table, 0, 2, "바이낸스:", text_color = color.white)
+    table.cell(kimp_table, 1, 2, str.tostring(binance_krw, "#.#"), text_color = color.white)
+
+table.cell_set_text(kimp_table, 1, 0, str.tostring(kimp, format.percent))
+table.cell_set_text(kimp_table, 1, 1, str.tostring(upbit, "#.#"))
+table.cell_set_text(kimp_table, 1, 2, str.tostring(binance_krw, "#.#"))
+```
